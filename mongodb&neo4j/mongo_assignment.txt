@@ -1,0 +1,82 @@
+
+mongoimport -d mydb -c grades --file e:\assignments\assignment4\grades.txt
+
+> use mydb
+
+
+// get the aggregate scores
+> var grades = db.grades.aggregate({$group : {_id : "$sid", minGrade: {$min : "$score" }, maxGrade: {$max : "$score" }}});
+> grades
+{ "_id" : 7, "minGrade" : 63, "maxGrade" : 85 }
+{ "_id" : 8, "minGrade" : 66, "maxGrade" : 67 }
+{ "_id" : 9, "minGrade" : 16, "maxGrade" : 75 }
+{ "_id" : 5, "minGrade" : 23, "maxGrade" : 41 }
+{ "_id" : 3, "minGrade" : 50, "maxGrade" : 92 }
+{ "_id" : 4, "minGrade" : 5, "maxGrade" : 28 }
+{ "_id" : 6, "minGrade" : 81, "maxGrade" : 89 }
+{ "_id" : 2, "minGrade" : 60, "maxGrade" : 97 }
+{ "_id" : 1, "minGrade" : 21, "maxGrade" : 44 }
+{ "_id" : 0, "minGrade" : 14, "maxGrade" : 63 }
+
+// calculate the intermediate and final scores
+>
+grades.forEach(function(student){
+	sum = (student.maxGrade * .6) + (student.minGrade * .4);
+	// print(student._id + " " + sum);
+	// print("SUM: " + sum);
+	db.final_grades.insert({_id: student._id, finalGrade: sum});
+});
+> db.final_grades.find().pretty()
+{ "_id" : 0, "finalGrade" : 43.4, "name" : "Saeed" }
+{ "_id" : 1, "finalGrade" : 34.8, "name" : "Sam" }
+{ "_id" : 2, "finalGrade" : 82.19999999999999, "name" : "Pat" }
+{ "_id" : 4, "finalGrade" : 18.8, "name" : "Lisa" }
+{ "_id" : 3, "finalGrade" : 75.19999999999999, "name" : "Joe" }
+{ "_id" : 6, "finalGrade" : 85.8, "name" : "Ali" }
+{ "_id" : 5, "finalGrade" : 33.8, "name" : "Kurt" }
+{ "_id" : 9, "finalGrade" : 51.4, "name" : "Bob" }
+{ "_id" : 8, "finalGrade" : 66.6, "name" : "Hamid" }
+{ "_id" : 7, "finalGrade" : 76.2, "name" : "Mo" }
+
+// add the student names to the output collection
+> var student_names = db.grades.find({}, {sid:1,name:1,_id:0})
+> student_names
+{ "sid" : 0, "name" : "Saeed" }
+{ "sid" : 1, "name" : "Sam" }
+{ "sid" : 2, "name" : "Pat" }
+{ "sid" : 4, "name" : "Lisa" }
+{ "sid" : 3, "name" : "Joe" }
+{ "sid" : 0, "name" : "Saeed" }
+{ "sid" : 1, "name" : "Sam" }
+{ "sid" : 3, "name" : "Joe" }
+{ "sid" : 4, "name" : "Lisa" }
+{ "sid" : 6, "name" : "Ali" }
+{ "sid" : 5, "name" : "Kurt" }
+{ "sid" : 9, "name" : "Bob" }
+{ "sid" : 8, "name" : "Hamid" }
+{ "sid" : 6, "name" : "Ali" }
+{ "sid" : 7, "name" : "Mo" }
+{ "sid" : 9, "name" : "Bob" }
+{ "sid" : 8, "name" : "Hamid" }
+{ "sid" : 2, "name" : "Pat" }
+{ "sid" : 7, "name" : "Mo" }
+{ "sid" : 5, "name" : "Kurt" }
+
+>
+student_names.forEach(function(student){
+  db.final_grades.update({_id: student.sid},{$set: {name: student.name}});
+});
+
+// print the output collection with the names, sorted by grade descending
+> db.final_grades.find({}, {_id: 0, name:1, finalGrade:1}).sort({finalGrade:-1})
+
+{ "finalGrade" : 85.8, "name" : "Ali" }
+{ "finalGrade" : 82.19999999999999, "name" : "Pat" }
+{ "finalGrade" : 76.2, "name" : "Mo" }
+{ "finalGrade" : 75.19999999999999, "name" : "Joe" }
+{ "finalGrade" : 66.6, "name" : "Hamid" }
+{ "finalGrade" : 51.4, "name" : "Bob" }
+{ "finalGrade" : 43.4, "name" : "Saeed" }
+{ "finalGrade" : 34.8, "name" : "Sam" }
+{ "finalGrade" : 33.8, "name" : "Kurt" }
+{ "finalGrade" : 18.8, "name" : "Lisa" }
