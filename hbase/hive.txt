@@ -1,0 +1,82 @@
+hbase:
+create 'emp','cf1'
+scan 'emp'
+
+hive:
+drop TABLE emp_staging;
+
+add jar /usr/lib/hive/lib/hive-hbase-handler-0.10.0-cdh4.2.1.jar;
+add jar /usr/lib/hive/lib/hbase.jar;
+add jar /usr/lib/hive/lib/zookeeper.jar;
+
+CREATE TABLE emp_staging
+(eid INT, fname string, dno INT, city string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+	
+LOAD DATA LOCAL INPATH '/home/training/hbase/emp1.txt'
+INTO TABLE emp_staging;
+
+SELECT * FROM emp_staging;
+
+1       Saeed   2       MPLS
+2       Joe     1       Edina
+3       Sam     2       NULL
+5       Pat     1       Edina
+6       Kurt    1       MPLS
+7       Bob     NULL    MPLS
+
+SELECT count(*) from emp_staging;
+6
+
+drop TABLE hiveClassEmp;
+
+CREATE EXTERNAL TABLE hiveClassEmp
+(eid INT, fname string, dno INT, city string)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" =
+":key,cf1:fname,cf1:dno,cf1:city")
+TBLPROPERTIES("hbase.table.name" = "emp");
+
+select * from hiveClassEmp;
+
+INSERT OVERWRITE TABLE hiveClassEmp 
+SELECT eid, fname, dno, coalesce(city,'Edina')
+FROM emp_staging;
+
+select * from hiveClassEmp;
+
+1       Saeed   2       MPLS
+2       Joe     1       Edina
+3       Sam     2       Edina
+5       Pat     1       Edina
+6       Kurt    1       MPLS
+7       Bob     NULL    MPLS
+
+SELECT count(*) from hiveClassEmp;
+6
+
+Hbase:
+
+scan 'emp'
+
+ROW                   COLUMN+CELL
+ 1                    column=cf1:city, timestamp=1430155753438, value=MPLS
+ 1                    column=cf1:dno, timestamp=1430155753438, value=2
+ 1                    column=cf1:fname, timestamp=1430155753438, value=Saeed
+ 2                    column=cf1:city, timestamp=1430155753438, value=Edina
+ 2                    column=cf1:dno, timestamp=1430155753438, value=1
+ 2                    column=cf1:fname, timestamp=1430155753438, value=Joe
+ 3                    column=cf1:city, timestamp=1430155753438, value=Edina
+ 3                    column=cf1:dno, timestamp=1430155753438, value=2
+ 3                    column=cf1:fname, timestamp=1430155753438, value=Sam
+ 5                    column=cf1:city, timestamp=1430155753438, value=Edina
+ 5                    column=cf1:dno, timestamp=1430155753438, value=1
+ 5                    column=cf1:fname, timestamp=1430155753438, value=Pat
+ 6                    column=cf1:city, timestamp=1430155753438, value=MPLS
+ 6                    column=cf1:dno, timestamp=1430155753438, value=1
+ 6                    column=cf1:fname, timestamp=1430155753438, value=Kurt
+ 7                    column=cf1:city, timestamp=1430155753438, value=MPLS
+ 7                    column=cf1:fname, timestamp=1430155753438, value=Bob
+6 row(s) in 0.0620 seconds

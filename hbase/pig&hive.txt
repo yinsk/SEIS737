@@ -1,0 +1,96 @@
+1:Using pig
+
+my_data = LOAD 'hbase://emp' USING
+org.apache.pig.backend.hadoop.hbase.HBaseStorage('cf1:fname cf1:lname cf1:age 
+cf1:city cf1:dno cf1:salary', '-loadKey=true') as (id, fname, lname, age, city, dno, salary);
+
+dump my_data
+(1,Saeed,Rahimi,63,MPLS,2,2000)
+(2,Joe,Krummel,27,Edina,1,1000)
+(3,Sam,,,Edina,2,)
+(4,,Boyd,,,,3500)
+(5,Pat,Zimmer,72,Edina,1,)
+(6,Kurt,Abraham,66,MPLS,1,6000)
+(7,Bob,Jones,95,MPLS,,5000)
+
+S = group my_data by salary;
+
+
+A= FOREACH my_data GENERATE salary as S;
+dump A;
+(2000)
+(1000)
+()
+(3500)
+()
+(6000)
+(5000)
+
+B = group A all as a;
+dump B;
+(all,{(2000),(1000),(),(3500),(),(6000),(5000)})
+
+avg = foreach B generate AVG(A.S);
+dump avg
+(3500.0)
+
+C = foreach my_data generate id as id, city as ct;
+dump C;
+
+(1,MPLS)
+(2,Edina)
+(3,Edina)
+(4,)
+(5,Edina)
+(6,MPLS)
+(7,MPLS)
+
+X = FILTER C BY (ct == 'MPLS');
+
+(1,MPLS)
+(6,MPLS)
+(7,MPLS)
+
+D= group X by ct;
+dump D;
+(MPLS,{(1,MPLS),(6,MPLS),(7,MPLS)})
+
+E = foreach D generate group, COUNT($1);
+
+(MPLS,3)
+
+2:Using Hive
+
+CREATE EXTERNAL TABLE emp_hive
+(id INT, fname string, lname string, age INT, dno INT ,city string,salary INT)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" =
+":key,cf1:fname,cf1:lname, cf1:age,cf1:dno,cf1:city,cf1:salary")
+TBLPROPERTIES("hbase.table.name" = "emp");
+
+select * from emp_hive;
+
+1       Saeed   Rahimi  63      2       MPLS    2000
+2       Joe     Krummel 27      1       Edina   1000
+3       Sam     NULL    NULL    2       Edina   NULL
+4       NULL    Boyd    NULL    NULL    NULL    3500
+5       Pat     Zimmer  72      1       Edina   NULL
+6       Kurt    Abraham 66      1       MPLS    6000
+7       Bob     Jones   95      NULL    MPLS    5000
+
+Select AVG(age)
+from emp_hive;
+
+64.6
+
+select count(*)
+from emp_hive
+where city = "Edina";
+
+3
+
+
+
+
+
+

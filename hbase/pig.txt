@@ -1,0 +1,58 @@
+pig -x local
+
+raw_data = LOAD 'hbase/emp2.txt' USING PigStorage( ',' )
+AS (eid: chararray, lname: chararray, age: chararray, salary: chararray );
+
+dump raw_data
+
+(1,Rahimi,63,2000)
+(2,Krummel,27,1000)
+(4,Boyd,,3500)
+(5,Zimmer,72,)
+(6,Abraham,66,6000)
+(7,Jones,95,5000)
+
+STORE raw_data INTO 'hbase://emp' USING
+org.apache.pig.backend.hadoop.hbase.HBaseStorage ('cf1:lname cf1:age cf1:salary');
+
+hbase:
+
+scan 'emp'
+
+ROW                   COLUMN+CELL
+ 1                    column=cf1:age, timestamp=1430166822732, value=63
+ 1                    column=cf1:city, timestamp=1430166720930, value=MPLS
+ 1                    column=cf1:dno, timestamp=1430166720930, value=2
+ 1                    column=cf1:fname, timestamp=1430166720930, value=Saeed
+ 1                    column=cf1:lname, timestamp=1430166822732, value=Rahimi
+ 1                    column=cf1:salary, timestamp=1430166822732, value=2000
+ 2                    column=cf1:age, timestamp=1430166822732, value=27
+ 2                    column=cf1:city, timestamp=1430166720930, value=Edina
+ 2                    column=cf1:dno, timestamp=1430166720930, value=1
+ 2                    column=cf1:fname, timestamp=1430166720930, value=Joe
+ 2                    column=cf1:lname, timestamp=1430166822732, value=Krummel
+ 2                    column=cf1:salary, timestamp=1430166822732, value=1000
+ 3                    column=cf1:city, timestamp=1430166720930, value=Edina
+ 3                    column=cf1:dno, timestamp=1430166720930, value=2
+ 3                    column=cf1:fname, timestamp=1430166720930, value=Sam
+ 4                    column=cf1:age, timestamp=1430166822732, value=
+ 4                    column=cf1:lname, timestamp=1430166822732, value=Boyd
+ 4                    column=cf1:salary, timestamp=1430166822732, value=3500
+ 5                    column=cf1:age, timestamp=1430166822733, value=72
+ 5                    column=cf1:city, timestamp=1430166720930, value=Edina
+ 5                    column=cf1:dno, timestamp=1430166720930, value=1
+ 5                    column=cf1:fname, timestamp=1430166720930, value=Pat
+ 5                    column=cf1:lname, timestamp=1430166822733, value=Zimmer
+ 5                    column=cf1:salary, timestamp=1430166822733, value=
+ 6                    column=cf1:age, timestamp=1430166822733, value=66
+ 6                    column=cf1:city, timestamp=1430166720930, value=MPLS
+ 6                    column=cf1:dno, timestamp=1430166720930, value=1
+ 6                    column=cf1:fname, timestamp=1430166720930, value=Kurt
+ 6                    column=cf1:lname, timestamp=1430166822733, value=Abraham
+ 6                    column=cf1:salary, timestamp=1430166822733, value=6000
+ 7                    column=cf1:age, timestamp=1430166822734, value=95
+ 7                    column=cf1:city, timestamp=1430166720930, value=MPLS
+ 7                    column=cf1:fname, timestamp=1430166720930, value=Bob
+ 7                    column=cf1:lname, timestamp=1430166822734, value=Jones
+ 7                    column=cf1:salary, timestamp=1430166822734, value=5000
+7 row(s) in 0.0570 seconds

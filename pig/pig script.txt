@@ -1,0 +1,28 @@
+javac -d . -classpath /usr/lib/pig/pig.jar:`hadoop classpath` Pivot.java
+
+jar -cf myudfs.jar myudfs
+
+pig -x local
+
+REGISTER myudfs.jar;
+
+A = LOAD 'tellers/Teller1.txt' USING PigStorage('\t') AS (f1:chararray);
+a = LOAD 'tellers/Teller2.txt' USING PigStorage('\t') AS (f1:chararray);
+
+Aa = union A,a;
+
+B = FOREACH Aa GENERATE myudfs.Pivot(f1);
+
+dump B;
+
+C = foreach B generate flatten($0);
+
+dump C;
+
+D = group C by $0;
+
+dump D
+
+E = foreach D generate group,COUNT(C);
+
+dump E
